@@ -1,7 +1,5 @@
 version: 1.0.{build}
 skip_tags: true
-init:
-- ps: 
 services:
 - mssql2014
 - mysql
@@ -9,130 +7,88 @@ services:
 hosts:
   www.mydrupalsite.com: 127.0.0.1
 install:
-- cmd:
-    net start W3SVC
-    powershell -command "new-item c:\tools\php\ext -itemtype directory"
-    powershell -command "new-item c:\tmp -itemtype directory"
-    rmdir c:\tmp /s /q
-    powershell -command "new-item c:\tmp -itemtype directory"
-    powershell -command "(New-Object Net.WebClient).DownloadFile('http://windows.php.net/downloads/pecl/releases/wincache/2.0.0.8/php_wincache-2.0.0.8-7.0-nts-vc14-x64.zip','C:\tmp\wincache.zip')"
-    powershell -command "(new-object -com shell.application).namespace('C:\tmp').CopyHere((new-object -com shell.application).namespace('C:\tmp\wincache.zip').Items(),16)"
-    copy /-Y "c:\tmp\php_wincache.dll" "c:\tools\php\ext\php_wincache.dll"
-    powershell -command "(Get-Item c:\tools\php\ext\php_wincache.dll).VersionInfo"
-    cinst -y OpenSSL.Light
-    SET PATH=C:\Program Files\OpenSSL;%PATH%
-    sc config wuauserv start= auto
-    net start wuauserv
-    cinst -y --allow-empty-checksums php -version 7.0.9
-    cd c:\tools\php
-    copy php.ini-production php.ini
-
-    echo date.timezone="UTC" >> php.ini
-    echo extension_dir=ext >> php.ini
-    echo extension=php_openssl.dll >> php.ini
-    echo extension=php_wincache.dll >> php.ini
-    echo extension=php_pdo_mysql.dll >> php.ini
-    echo extension=php_com_dotnet.dll >> php.ini
-    echo extension=php_sockets.dll >> php.ini
-    echo extension=php_mbstring.dll >> php.ini
-    echo extension=php_soap.dll >> php.ini
-    echo extension=php_curl.dll >> php.ini
-    echo extension=php_gd2.dll >> php.ini
-    echo extension=php_gettext.dll >> php.ini
-    echo zend_extension=php_opcache.dll >> php.ini
-    echo opcache.enable=1 >> php.ini
-    echo opcache.enable_cli=1 >> php.ini
-    echo opcache.memory_consumption=128 >> php.ini
-    echo opcache.revalidate_freq=1500 >> php.ini
-    echo opcache.max_accelerated_files=8000 >> php.ini
-    echo wincache.ucenabled=1 >> php.ini
-    echo wincache.ucachesize=128 >> php.ini
-    echo wincache.fcenabled=0 >> php.ini
-    echo realpath_cache_size=5M >> php.ini
-    echo realpath_cache_ttl=1800 >> php.ini
-
-    powershell -command "(New-Object Net.WebClient).DownloadFile('https://curl.haxx.se/ca/cacert.pem','C:\cacert.pem')"
-    echo curl.cainfo="C:\cacert.pem" >> php.ini
-    SET PATH=C:\tools\php;%PATH%
-    powershell -Command ($env:Path)
-
-    powershell -command "new-item c:\composer -itemtype directory"
-
-    cd /d C:\composer
-    php -r "readfile('http://getcomposer.org/installer');" | php
-    powershell -command "(Get-Item C:\composer\composer.phar).length"
-    powershell -command "'@php C:\composer\composer.phar ' + $([char]37) + '*' | Out-File C:\composer\composer.bat -Encoding ASCII"
-    SET PATH=C:\composer;%PATH%
-
-    cd /d C:\projects\
-    IF NOT EXIST C:\projects\drupal-project composer create-project -n drupal-composer/drupal-project:8.x-dev
-    cd /d C:\projects\drupal-project
-
-    composer config repositories.drupal composer https://packages.drupal.org/8
-    powershell -command "'@php %cd%\vendor\drupal\console\bin\drupal ' + $([char]37) + '*' | Out-File %cd%/web/drupal.bat -Encoding ASCII"
-    
-    cd /d C:\projects\drupal-project\web
-    drupal about
-    drupal site:install standard --langcode="en" --db-type="mysql" --db-host="127.0.0.1" --db-name="mydrupalsite" --db-user="root" --db-pass="Password12!" --db-port="3306" --site-name="Windows Drupal Site" --site-mail="admin@example.com" --account-name="admin" --account-mail="admin@example.com" --account-pass="admin" --no-interaction
-    drupal about
-
-    cd /d C:\projects\drupal-project
-    
-    powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/2294731-2-63.patch','%cd%\patch.patch')"
-    git apply patch.patch --directory=web
-
-    powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/use_the_php_binary-2748883-19.patch','%cd%\patch.patch')"
-    git apply patch.patch --directory=web
-
-    powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/simpletest_is_broken_on-2605284-61.patch','%cd%\patch.patch')"
-    git apply patch.patch --directory=web
-
-    powershell -command "(New-Object Net.WebClient).DownloadFile('https://patch-diff.githubusercontent.com/raw/hechoendrupal/drupal-console/pull/3134.patch','%cd%\patch.patch')"
-    git apply patch.patch --directory=vendor/drupal/console
-
-
-    echo ################### Install simpletest
-
-
-    cd /d C:\projects\drupal-project\web
-    drupal module:install simpletest
-
-
-    echo ################### Setup site on IIS
-    choco install -y urlrewrite
-
-    powershell -command "New-WebSite -Name 'MyWebsite' -PhysicalPath 'c:\projects\drupal-project\web' -Force"
-
-
-    echo 127.0.0.1 www.mysite.com >> %WINDIR%\System32\Drivers\Etc\Hosts
-    powershell -command "Import-Module WebAdministration; Set-ItemProperty 'IIS:\Sites\MyWebsite' -name Bindings -value @{protocol='http';bindingInformation='*:80:www.mysite.com'}"
-
-
-    SET PATH=%systemroot%\system32\inetsrv\;%PATH%
-
-    echo Change default anonymous user AUTH to ApplicationPool
-    appcmd set config -section:anonymousAuthentication /username:"" --password
-
-
-    echo Setup FAST-CGI configuration
-    appcmd set config /section:system.webServer/fastCGI /+[fullPath='C:\tools\php\php-cgi.exe']
-
-
-    echo Setup FACT-CGI handler
-    appcmd set config /section:system.webServer/handlers /+[name='PHP-FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='C:\tools\php\php-cgi.exe',resourceType='Either']
-
-    iisreset
-
-    NET START W3SVC
-
-    powershell -command "wget http://www.mysite.com/"
-
+- cmd: net start W3SVC
+- cmd: powershell -command "new-item c:\tools\php\ext -itemtype directory"
+- cmd: powershell -command "new-item c:\tmp -itemtype directory"
+- cmd: rmdir c:\tmp /s /q
+- cmd: powershell -command "new-item c:\tmp -itemtype directory"
+- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('http://windows.php.net/downloads/pecl/releases/wincache/2.0.0.8/php_wincache-2.0.0.8-7.0-nts-vc14-x64.zip','C:\tmp\wincache.zip')"
+- cmd: powershell -command "(new-object -com shell.application).namespace('C:\tmp').CopyHere((new-object -com shell.application).namespace('C:\tmp\wincache.zip').Items(),16)"
+- cmd: copy /-Y "c:\tmp\php_wincache.dll" "c:\tools\php\ext\php_wincache.dll"
+- cmd: powershell -command "(Get-Item c:\tools\php\ext\php_wincache.dll).VersionInfo"
+- cmd: cinst -y OpenSSL.Light
+- cmd: SET PATH=C:\Program Files\OpenSSL;%PATH%
+- cmd: sc config wuauserv start= auto
+- cmd: net start wuauserv
+- cmd: cinst -y --allow-empty-checksums php -version 7.0.9
+- cmd: cd c:\tools\php
+- cmd: copy php.ini-production php.ini
+- cmd: echo date.timezone="UTC" >> php.ini
+- cmd: echo extension_dir=ext >> php.ini
+- cmd: echo extension=php_openssl.dll >> php.ini
+- cmd: echo extension=php_wincache.dll >> php.ini
+- cmd: echo extension=php_pdo_mysql.dll >> php.ini
+- cmd: echo extension=php_com_dotnet.dll >> php.ini
+- cmd: echo extension=php_sockets.dll >> php.ini
+- cmd: echo extension=php_mbstring.dll >> php.ini
+- cmd: echo extension=php_soap.dll >> php.ini
+- cmd: echo extension=php_curl.dll >> php.ini
+- cmd: echo extension=php_gd2.dll >> php.ini
+- cmd: echo extension=php_gettext.dll >> php.ini
+- cmd: echo zend_extension=php_opcache.dll >> php.ini
+- cmd: echo opcache.enable=1 >> php.ini
+- cmd: echo opcache.enable_cli=1 >> php.ini
+- cmd: echo opcache.memory_consumption=128 >> php.ini
+- cmd: echo opcache.revalidate_freq=1500 >> php.ini
+- cmd: echo opcache.max_accelerated_files=8000 >> php.ini
+- cmd: echo wincache.ucenabled=1 >> php.ini
+- cmd: echo wincache.ucachesize=128 >> php.ini
+- cmd: echo wincache.fcenabled=0 >> php.ini
+- cmd: echo realpath_cache_size=5M >> php.ini
+- cmd: echo realpath_cache_ttl=1800 >> php.ini
+- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://curl.haxx.se/ca/cacert.pem','C:\cacert.pem')"
+- cmd: echo curl.cainfo="C:\cacert.pem" >> php.ini
+- cmd: SET PATH=C:\tools\php;%PATH%
+- cmd: powershell -Command ($env:Path)
+- cmd: powershell -command "new-item c:\composer -itemtype directory"
+- cmd: cd /d C:\composer
+- cmd: php -r "readfile('http://getcomposer.org/installer');" | php
+- cmd: powershell -command "(Get-Item C:\composer\composer.phar).length"
+- cmd: powershell -command "'@php C:\composer\composer.phar ' + $([char]37) + '*' | Out-File C:\composer\composer.bat -Encoding ASCII"
+- cmd: SET PATH=C:\composer;%PATH%
+- cmd: cd /d C:\projects\
+- cmd: IF NOT EXIST C:\projects\drupal-project composer create-project -n drupal-composer/drupal-project:8.x-dev
+- cmd: cd /d C:\projects\drupal-project
+- cmd: composer config repositories.drupal composer https://packages.drupal.org/8
+- cmd: powershell -command "'@php %cd%\vendor\drupal\console\bin\drupal ' + $([char]37) + '*' | Out-File %cd%/web/drupal.bat -Encoding ASCII"
+- cmd: cd /d C:\projects\drupal-project\web
+- cmd: drupal about
+- cmd: drupal site:install standard --langcode="en" --db-type="mysql" --db-host="127.0.0.1" --db-name="mydrupalsite" --db-user="root" --db-pass="Password12!" --db-port="3306" --site-name="Windows Drupal Site" --site-mail="admin@example.com" --account-name="admin" --account-mail="admin@example.com" --account-pass="admin" --no-interaction
+- cmd: drupal about
+- cmd: cd /d C:\projects\drupal-project
+- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/2294731-2-63.patch','%cd%\patch.patch')"
+- cmd: git apply patch.patch --directory=web
+- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/use_the_php_binary-2748883-19.patch','%cd%\patch.patch')"
+- cmd: git apply patch.patch --directory=web
+- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/simpletest_is_broken_on-2605284-61.patch','%cd%\patch.patch')"
+- cmd: git apply patch.patch --directory=web
+- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://patch-diff.githubusercontent.com/raw/hechoendrupal/drupal-console/pull/3134.patch','%cd%\patch.patch')"
+- cmd: git apply patch.patch --directory=vendor/drupal/console
+- cmd: cd /d C:\projects\drupal-project\web
+- cmd: drupal module:install simpletest
+- cmd: choco install -y urlrewrite
+- cmd: powershell -command "New-WebSite -Name 'MyWebsite' -PhysicalPath 'c:\projects\drupal-project\web' -Force"
+- cmd: powershell -command "Import-Module WebAdministration; Set-ItemProperty 'IIS:\Sites\MyWebsite' -name Bindings -value @{protocol='http';bindingInformation='*:80:www.mysite.com'}"
+- cmd: SET PATH=%systemroot%\system32\inetsrv\;%PATH%
+- cmd: appcmd set config -section:anonymousAuthentication /username:"" --password
+- cmd: appcmd set config /section:system.webServer/fastCGI /+[fullPath='C:\tools\php\php-cgi.exe']
+- cmd: appcmd set config /section:system.webServer/handlers /+[name='PHP-FastCGI',path='*.php',verb='*',modules='FastCgiModule',scriptProcessor='C:\tools\php\php-cgi.exe',resourceType='Either']
+- cmd: iisreset
+- cmd: NET START W3SVC
+- cmd: powershell -command "wget http://www.mysite.com/"
 test_script:
-- cmd:
-    echo ################### Run tests...
-
-    cd /d C:\projects\drupal-project
-    mkdir c:\testresults\
-    php web/core/scripts/run-tests.sh --php php --verbose --url "http://www.mysite.com/" --xml c:\testresults\ "Common"
-    php web/core/scripts/run-tests.sh --verbose --url "http://www.mysite.com/" --xml c:\testresults\ "Common"
-    
+- cmd: echo # ################## Run tests...
+- cmd: cd /d C:\projects\drupal-project
+- cmd: mkdir c:\testresults\
+- cmd: php web/core/scripts/run-tests.sh --php php --verbose --url "http://www.mysite.com/" --xml c:\testresults\ "Common"
+- cmd: php web/core/scripts/run-tests.sh --verbose --url "http://www.mysite.com/" --xml c:\testresults\ "Common"
