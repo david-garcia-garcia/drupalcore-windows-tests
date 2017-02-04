@@ -68,7 +68,7 @@ install:
 - cmd: drupal site:install standard --langcode="en" --db-type="mysql" --db-host="127.0.0.1" --db-name="mydrupalsite" --db-user="root" --db-pass="Password12!" --db-port="3306" --site-name="Windows Drupal Site" --site-mail="admin@example.com" --account-name="admin" --account-mail="admin@example.com" --account-pass="admin" --no-interaction
 - cmd: drupal about
 - cmd: cd /d C:\projects\drupal-project
-- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/2294731-2-63.patch','%cd%\patch.patch')"
+- cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/2294731-39-phpunit-windows.patch','%cd%\patch.patch')"
 - cmd: git apply patch.patch --directory=web
 - cmd: powershell -command "(New-Object Net.WebClient).DownloadFile('https://www.drupal.org/files/issues/use_the_php_binary-2748883-19.patch','%cd%\patch.patch')"
 - cmd: git apply patch.patch --directory=web
