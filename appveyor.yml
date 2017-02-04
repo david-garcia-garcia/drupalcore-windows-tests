@@ -9,7 +9,7 @@ services:
 hosts:
   www.mydrupalsite.com: 127.0.0.1
 install:
-- cmd: >-
+- cmd:
     net start W3SVC
     powershell -command "new-item c:\tools\php\ext -itemtype directory"
     powershell -command "new-item c:\tmp -itemtype directory"
@@ -128,7 +128,7 @@ install:
     powershell -command "wget http://www.mysite.com/"
 
 test_script:
-- cmd: >-
+- cmd:
     echo ################### Run tests...
 
     cd /d C:\projects\drupal-project
