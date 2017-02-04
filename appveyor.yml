@@ -87,6 +87,7 @@ install:
 - cmd: iisreset
 - cmd: NET START W3SVC
 - cmd: powershell -command "wget http://www.mysite.com/"
+build: off
 test_script:
 - cmd: echo # ################## Run tests...
 - cmd: cd /d C:\projects\drupal-project
