@@ -62,6 +62,7 @@ install:
 - cmd: composer config repositories.drupal composer https://packages.drupal.org/8
 - cmd: powershell -command "'@php %cd%\vendor\drupal\console\bin\drupal ' + $([char]37) + '*' | Out-File %cd%/web/drupal.bat -Encoding ASCII"
 - cmd: cd /d C:\projects\drupal-project\web
+- cmd: net start MySQL57
 - cmd: drupal about
 - cmd: drupal site:install standard --langcode="en" --db-type="mysql" --db-host="127.0.0.1" --db-name="mydrupalsite" --db-user="root" --db-pass="Password12!" --db-port="3306" --site-name="Windows Drupal Site" --site-mail="admin@example.com" --account-name="admin" --account-mail="admin@example.com" --account-pass="admin" --no-interaction
 - cmd: drupal about
